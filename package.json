@@ -1,0 +1,38 @@
+{
+  "name": "org2kf",
+  "version": "0.0.1",
+  "description": "No name given yet",
+  "main": "index.js",
+  "bin": {
+    "org2kf": "./index.js"
+  },
+  "man": "./man/man1/org2kf.1",
+  "scripts": {
+    "test": "make test"
+    },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vzaccaria/org2kf.git"
+  },
+  "author": "Vittorio Zaccaria",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/vzaccaria/org2kf/issues"
+  },
+  "homepage": "https://github.com/vzaccaria/org2kf",
+  "dependencies": {
+	  "zaccaria-cli": "*"
+  },
+  "devDependencies": {
+    "diy-build": "^1.0.8",
+    "babel": "^4.7.16",
+    "shelljs": "*",
+    "xyz": "*",
+    "mocha": "*",
+    "chai": "*",
+    "chai-as-promised": "*",
+	  "mustache": "~2.1.2",
+	  "stupid-replace": "~0.0.3",
+	  "git-hist": "*"
+  }
+}
