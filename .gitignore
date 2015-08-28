@@ -1,3 +1,6 @@
 node_modules
 lib
 makefile
+playground/tikz.aux
+playground/tikz.pdf
+playground/tikz.tex
