@@ -7,5 +7,4 @@ edit:
 	watchman tikz.tex make
 
 play:
-	make -C ..
-	../index.js ../reference/arch.md > ./tikz.tex && make
+	watchman ../src/latex.js 'make -C .. && ../index.js ../reference/arch.md > ./tikz.tex && make'
