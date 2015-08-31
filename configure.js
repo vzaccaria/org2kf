@@ -7,7 +7,7 @@ var path = require('path')
 generateProject(_ => {
 
     _.babel = (dir, ...deps) => {
-        var command = (_) => `./node_modules/.bin/babel ${_.source} -o ${_.product}`
+        var command = (_) => `./node_modules/.bin/babel --optional runtime ${_.source} -o ${_.product}`
         var product = (_) => `./lib/${path.basename(_.source)}`
         _.compileFiles(...([command, product, dir].concat(deps)))
     }

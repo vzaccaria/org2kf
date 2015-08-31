@@ -96,23 +96,24 @@ function parseLayout(s) {
     a = _.countBy(a, it => {
         return it;
     })
-    if (!_.isNumber(a['+'])) {
-        error("Sorry, you need to specify layout margins with a '+' character")
-    }
     if (_.isNumber(a['\t'])) {
         error("Sorry, you can't use a tab character to specify layout. Convert them to spaces")
     }
     var lin = s.split("\n")
     var le = getLayoutElements(a)
     var ip = getInvisiblePoints(a)
+	var layoutRectangle = [lin.length, _.max(lin, it => {
+		return it.length
+	})]
     return {
-        geometry: getRect(lin, '+').lr,
+        geometry: layoutRectangle,
         layoutElements: le,
         invisiblePoints: ip,
-        rectangles: _.map(le.join(ip), it => {
+        rectangles: _.map(le.concat(ip), it => {
             return {
                 id: it,
-                rectangle: getRect(lin, it)
+                rectangle: getRect(lin, it), 
+				invisible: _.contains(ip, it)
             }
         })
 

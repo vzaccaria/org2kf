@@ -14,16 +14,18 @@
 % Definition of blocks:
 % Defining string as labels of certain blocks.
 
-\tikzstyle{vecArrow} = [thick, decoration={markings,mark=at position
+\tikzstyle{bus} = [thick, decoration={markings,mark=at position
    1 with {\arrow[semithick]{open triangle 60}}},
    double distance=1.4pt, shorten >= 5.5pt,
    preaction = {decorate},
    postaction = {draw,line width=1.4pt, white,shorten >= 4.5pt}]
-\tikzstyle{innerWhite} = [semithick, white,line width=1.4pt, shorten >= 4.5pt]
+\tikzstyle{busd} = [thick, 
+   double distance=1.4pt, 
+   preaction = {decorate},
+   postaction = {draw,line width=1.4pt, white}]
+\tikzstyle{busInner} = [semithick, white,line width=1.4pt, shorten >= 4.5pt]
 
 \begin{tikzpicture}[auto, thick]
-  \draw[step=1cm, help lines] (0,0) grid (5, 5);
   @CODE
-  \draw[vecArrow] (Q) |- (T) |- (E);
 \end{tikzpicture}
 \end{document}
