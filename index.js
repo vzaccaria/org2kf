@@ -172,7 +172,7 @@ function parseFile(file, it) {
                 if (_.isUndefined(file)) {
                     console.log($s.cat("" + dir + "/org2kf.pdf"));
                 } else {
-                    $s.cp("" + dir + "/org2kf.pdf", file);
+                    $s.execAsync("cp -f " + dir + "/org2kf.pdf " + file);
                 }
             });
         } else {
