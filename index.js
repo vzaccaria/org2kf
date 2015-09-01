@@ -9,8 +9,10 @@ var $o = _require.$o;
 var $f = _require.$f;
 var $fs = _require.$fs;
 var _ = _require._;
+var $s = _require.$s;
 
 var marked = require("mdast");
+var path = require("path");
 var S = require("string");
 
 var _require2 = require("./lib/latex");
@@ -22,8 +24,19 @@ var getOptions = function (doc) {
     var o = $d(doc);
     var help = $o("-h", "--help", false, o);
     var file = o.FILE;
+    var pdffile = $o("-p", "--pdf", "", o);
+    var string = $o("-s", "--string", "", o);
+    var ispdf = false;
+    var isstring = false;
+    if (pdffile !== "") {
+        ispdf = true;
+    }
+    if (string !== "") {
+        isstring = true;
+    }
+
     return {
-        help: help, file: file
+        help: help, file: file, pdffile: pdffile, ispdf: ispdf, string: string, isstring: isstring
     };
 };
 
@@ -137,11 +150,15 @@ var main = function () {
 
         var help = _getOptions.help;
         var file = _getOptions.file;
+        var pdffile = _getOptions.pdffile;
+        var ispdf = _getOptions.ispdf;
+        var string = _getOptions.string;
+        var isstring = _getOptions.isstring;
 
         if (help) {
             console.log(it);
         } else {
-            $fs.readFileAsync(file, "utf8").then(function (it) {
+            var parseFile = function (it) {
                 var tokens = marked.parse(it);
                 var codeblock = firstOf(tokens.children, function (it) {
                     return it.type === "code";
@@ -160,9 +177,24 @@ var main = function () {
                     layout: layout, connections: connections, labels: labels
                 };
                 toLatex(data).then(function (it) {
-                    console.log(it);
+                    if (ispdf) {
+                        var source = path.basename(pdffile, ".pdf");
+                        source = "" + source + ".tex";
+                        it.to(source);
+                        $s.execAsync("xelatex " + source, {
+                            silent: true
+                        });
+                    } else {
+                        console.log(it);
+                    }
                 });
-            });
+            };
+
+            if (!isstring) {
+                $fs.readFileAsync(file, "utf8").then(parseFile);
+            } else {
+                parseFile(string);
+            }
         }
     });
 };

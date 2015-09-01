@@ -1,0 +1,73 @@
+#+TITLE:     Concetti fondamentali dell'informatica
+#+AUTHOR:    Vittorio Zaccaria
+#+EMAIL:     vittorio.zaccaria@polimi.it
+#+DATE:      25 Aug 2015
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  it
+#+OPTIONS:   H:2 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t ':t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
+#+startup: beamer
+
+#+LaTeX_CLASS:         beamer
+#+LaTeX_CLASS_OPTIONS: [smaller]
+
+#+LaTeX_HEADER: \usepackage{minted} 
+#+LaTeX_HEADER: \usepackage[T1]{fontenc}
+#+LaTeX_HEADER: \usepackage{fontspec,xltxtra,xunicode}
+#+LATEX_HEADER: \setmainfont{Fira Sans} 
+#+LATEX_HEADER: \setsansfont{Fira Sans} 
+#+LATEX_HEADER: \setmonofont{Hasklig Medium}
+#+LATEX_HEADER: \setbeamerfont{title}     {family=\fontspec{Fira Sans Light},shape=\scshape}
+#+LATEX_HEADER: \setbeamerfont{frametitle}{family=\fontspec{Fira Sans Light},shape=\scshape}
+#+LATEX_HEADER: \setbeamertemplate{frametitle}[default][center]
+
+#+BEAMER_THEME: Dresden
+
+
+* pippo
+
+** questo e' pippo 
+
+ciao!
+
+#+name: archmd 
+#+begin_src markdown :exports none
+```
+    CCC
+I 2 CCC  O
+    CCC
+     1
+```
+
+
+| node | label  | type      |
+| ---  | -----  | ---       |
+| I    | $i(t)$ |           |
+| O    | $o(t)$ |           |
+| C    | CPU    | rectangle |
+
+
+| src  | dst  | style  | curve | label        |
+| ---- | ---- | -----  | ----- | ----         |
+| I    | C    | -latex |       | \\tiny pippo |
+| C    | O    | -latex |       |              |
+| 1    | O    | =>     | hv    |              |
+| 1    | 2    | =>     | hv    |              |
+#+end_src
+
+#+begin_src sh :exports none :var data=archmd :file arch.pdf 
+org2kf -s "$data" -p arch.pdf
+#+end_src
+
+#+RESULTS: graphics
+[[file:arch.pdf]]
+
+** Questo e' pluto
+

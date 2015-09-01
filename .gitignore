@@ -4,3 +4,9 @@ makefile
 playground/tikz.aux
 playground/tikz.pdf
 playground/tikz.tex
+playground/arch.aux
+playground/arch.log
+playground/arch.pdf
+playground/arch.tex
+playground/le_introduzione.pdf
+playground/le_introduzione.pyg

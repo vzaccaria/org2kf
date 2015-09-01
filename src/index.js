@@ -1,9 +1,10 @@
 /* eslint quotes: [0], strict: [0] */
 var {
-    $d, $o, $f, $fs, _
+    $d, $o, $f, $fs, _, $s
 } = require('zaccaria-cli')
 
 var marked = require('mdast')
+var path = require('path')
 var S = require('string')
 var {
     toLatex
@@ -14,9 +15,20 @@ var getOptions = doc => {
     "use strict"
     var o = $d(doc)
     var help = $o('-h', '--help', false, o)
-    var file = o['FILE']
+    var file = o.FILE
+    var pdffile = $o('-p', '--pdf', "", o)
+    var string = $o('-s', '--string', "", o)
+    var ispdf = false;
+    var isstring = false;
+    if (pdffile !== "") {
+        ispdf = true
+    }
+    if (string !== "") {
+        isstring = true
+    }
+
     return {
-        help, file
+        help, file, pdffile, ispdf, string, isstring
     }
 }
 
@@ -102,9 +114,9 @@ function parseLayout(s) {
     var lin = s.split("\n")
     var le = getLayoutElements(a)
     var ip = getInvisiblePoints(a)
-	var layoutRectangle = [lin.length, _.max(lin, it => {
-		return it.length
-	})]
+    var layoutRectangle = [lin.length, _.max(lin, it => {
+        return it.length
+    })]
     return {
         geometry: layoutRectangle,
         layoutElements: le,
@@ -112,8 +124,8 @@ function parseLayout(s) {
         rectangles: _.map(le.concat(ip), it => {
             return {
                 id: it,
-                rectangle: getRect(lin, it), 
-				invisible: _.contains(ip, it)
+                rectangle: getRect(lin, it),
+                invisible: _.contains(ip, it)
             }
         })
 
@@ -127,12 +139,12 @@ function firstOf(array, condition) {
 var main = () => {
     $f.readLocal('docs/usage.md').then(it => {
         var {
-            help, file
+            help, file, pdffile, ispdf, string, isstring
         } = getOptions(it);
         if (help) {
             console.log(it)
         } else {
-            $fs.readFileAsync(file, 'utf8').then(it => {
+            function parseFile(it) {
                 var tokens = marked.parse(it)
                 var codeblock = firstOf(tokens.children, it => {
                     return it.type === 'code'
@@ -140,20 +152,34 @@ var main = () => {
                 var filtered = _.map(_.filter(tokens.children, it => {
                     return it.type === 'table'
                 }), tableToJson)
-				var connections = firstOf(filtered, (it) => {
-					return _.contains(it.headers, 'src')
-				})
-				var labels = firstOf(filtered, (it) => {
-					return _.contains(it.headers, 'node')
-				})
-				var layout = parseLayout(codeblock)
-				var data = {
-					layout, connections, labels
-				}
-                toLatex(data).then(it => {
-                     console.log(it)
+                var connections = firstOf(filtered, (it) => {
+                    return _.contains(it.headers, 'src')
                 })
-            })
+                var labels = firstOf(filtered, (it) => {
+                    return _.contains(it.headers, 'node')
+                })
+                var layout = parseLayout(codeblock)
+                var data = {
+                    layout, connections, labels
+                }
+                toLatex(data).then(it => {
+                    if (ispdf) {
+						var source = path.basename(pdffile, '.pdf')
+						source = `${source}.tex`
+                        it.to(source)
+                        $s.execAsync(`xelatex ${source}`, {
+                            silent: true
+                        })
+                    } else {
+                        console.log(it)
+                    }
+                })
+            }
+            if (!isstring) {
+                $fs.readFileAsync(file, 'utf8').then(parseFile)
+            } else {
+                parseFile(string)
+            }
         }
     })
 }
