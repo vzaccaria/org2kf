@@ -10,6 +10,7 @@ var $f = _require.$f;
 var $fs = _require.$fs;
 var _ = _require._;
 var $s = _require.$s;
+var $r = _require.$r;
 
 var marked = require("mdast");
 var path = require("path");
@@ -19,24 +20,20 @@ var _require2 = require("./lib/latex");
 
 var toLatex = _require2.toLatex;
 
+var os = require("os");
+
 var getOptions = function (doc) {
     "use strict";
     var o = $d(doc);
     var help = $o("-h", "--help", false, o);
     var file = o.FILE;
-    var pdffile = $o("-p", "--pdf", "", o);
-    var string = $o("-s", "--string", "", o);
-    var ispdf = false;
-    var isstring = false;
-    if (pdffile !== "") {
-        ispdf = true;
+    var stdin = false;
+    if (_.isUndefined(file) || _.isNull(file)) {
+        stdin = true;
     }
-    if (string !== "") {
-        isstring = true;
-    }
-
+    var pdf = $o("-p", "--pdf", false, o);
     return {
-        help: help, file: file, pdffile: pdffile, ispdf: ispdf, string: string, isstring: isstring
+        help: help, file: file, pdf: pdf, stdin: stdin
     };
 };
 
@@ -144,59 +141,68 @@ function firstOf(array, condition) {
     return _.first(_.filter(array, condition));
 }
 
-var main = function () {
-    $f.readLocal("docs/usage.md").then(function (it) {
-        var _getOptions = getOptions(it);
-
-        var help = _getOptions.help;
-        var file = _getOptions.file;
-        var pdffile = _getOptions.pdffile;
-        var ispdf = _getOptions.ispdf;
-        var string = _getOptions.string;
-        var isstring = _getOptions.isstring;
-
-        if (help) {
-            console.log(it);
+function parseFile(file, it) {
+    var pdf = true;
+    console.log(JSON.stringify(file, 0, 4));
+    var tokens = marked.parse(it);
+    var codeblock = firstOf(tokens.children, function (it) {
+        return it.type === "code";
+    });
+    var filtered = _.map(_.filter(tokens.children, function (it) {
+        return it.type === "table";
+    }), tableToJson);
+    var connections = firstOf(filtered, function (it) {
+        return _.contains(it.headers, "src");
+    });
+    var labels = firstOf(filtered, function (it) {
+        return _.contains(it.headers, "node");
+    });
+    var layout = parseLayout(codeblock);
+    var data = {
+        layout: layout, connections: connections, labels: labels
+    };
+    toLatex(data).then(function (it) {
+        var dir = os.tmpdir();
+        var source = "" + dir + "/org2kf.tex";
+        if (pdf) {
+            it.to(source);
+            $s.execAsync("cd " + dir + " && xelatex " + source, {
+                silent: true
+            }).then(function () {
+                if (_.isUndefined(file)) {
+                    console.log($s.cat("" + dir + "/org2kf.pdf"));
+                } else {
+                    $s.cp("" + dir + "/org2kf.pdf", file);
+                }
+            });
         } else {
-            var parseFile = function (it) {
-                var tokens = marked.parse(it);
-                var codeblock = firstOf(tokens.children, function (it) {
-                    return it.type === "code";
-                });
-                var filtered = _.map(_.filter(tokens.children, function (it) {
-                    return it.type === "table";
-                }), tableToJson);
-                var connections = firstOf(filtered, function (it) {
-                    return _.contains(it.headers, "src");
-                });
-                var labels = firstOf(filtered, function (it) {
-                    return _.contains(it.headers, "node");
-                });
-                var layout = parseLayout(codeblock);
-                var data = {
-                    layout: layout, connections: connections, labels: labels
-                };
-                toLatex(data).then(function (it) {
-                    if (ispdf) {
-                        var source = path.basename(pdffile, ".pdf");
-                        source = "" + source + ".tex";
-                        it.to(source);
-                        $s.execAsync("xelatex " + source, {
-                            silent: true
-                        });
-                    } else {
-                        console.log(it);
-                    }
-                });
-            };
-
-            if (!isstring) {
-                $fs.readFileAsync(file, "utf8").then(parseFile);
+            if (_.isUndefined(file)) {
+                console.log(it);
             } else {
-                parseFile(string);
+                console.log("cp " + source + " " + file);
+                $s.execAsync("cp " + source + " " + file);
             }
         }
     });
-};
+}
 
-main();
+// var main = () => {
+//     $f.readLocal('docs/usage.md').then(it => {
+//         var opts;
+//         var {
+//             help, file, pdf, stdin
+//         } = opts = getOptions(it);
+//         if (help) {
+//             console.log(it)
+//         } else {
+
+//             if (!stdin) {
+//                 $fs.readFileAsync(file, 'utf8').then(_.curry(parseFile)(pdf))
+//             } else {
+//                 $r.stdin().then(_.curry(parseFile)(pdf))
+//             }
+//         }
+//     })
+// }
+
+module.exports = parseFile;

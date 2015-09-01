@@ -16,14 +16,17 @@ npm install org2kf
 
 ## Org Mode Boilerplate:
 
-	#+begin_src markdown :exports none
-	```
+#+begin_src js :exports none :results none
+	require('org2kf')('./pluto.pdf', `
+
+	\`\`\`
+
 		CCC
 	I 2 CCC  O
 		CCC
 		 1
-	```
 
+	\`\`\`
 
 	| node | label  | type      |
 	| ---  | -----  | ---       |
@@ -38,13 +41,13 @@ npm install org2kf
 	| C    | O    | -latex |       |              |
 	| 1    | O    | =>     | hv    |              |
 	| 1    | 2    | =>     | hv    |              |
+	`)
 	#+end_src
 
-	#+begin_src sh :exports none :var data=archmd :file arch.pdf 
-	org2kf -s "$data" -p arch.pdf
-	#+end_src
+	[[./pluto.pdf]]
 
-	#+RESULTS: graphics
+
+
 
 ## Author
 
