@@ -131,7 +131,7 @@ function firstOf(array, condition) {
 }
 
 function parseFile(file, it) {
-	var pdf = true
+    var pdf = true
     console.log(JSON.stringify(file, 0, 4));
     var tokens = marked.parse(it)
     var codeblock = firstOf(tokens.children, it => {
@@ -175,24 +175,24 @@ function parseFile(file, it) {
     })
 }
 
-// var main = () => {
-//     $f.readLocal('docs/usage.md').then(it => {
-//         var opts;
-//         var {
-//             help, file, pdf, stdin
-//         } = opts = getOptions(it);
-//         if (help) {
-//             console.log(it)
-//         } else {
+var main = () => {
+    $f.readLocal('docs/usage.md').then(it => {
+        var opts;
+        var {
+            help, file, pdf, stdin
+        } = opts = getOptions(it);
+        if (help) {
+            console.log(it)
+        } else {
+            $r.stdin().then( it => {
+				parseFile(file, it)
+			})
+        }
+    })
+}
 
-//             if (!stdin) {
-//                 $fs.readFileAsync(file, 'utf8').then(_.curry(parseFile)(pdf))
-//             } else {
-//                 $r.stdin().then(_.curry(parseFile)(pdf))
-//             }
-//         }
-//     })
-// }
-
-
-module.exports = parseFile
+if (!module.parent) {
+    main()
+} else {
+    module.exports = parseFile
+}

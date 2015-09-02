@@ -186,23 +186,29 @@ function parseFile(file, it) {
     });
 }
 
-// var main = () => {
-//     $f.readLocal('docs/usage.md').then(it => {
-//         var opts;
-//         var {
-//             help, file, pdf, stdin
-//         } = opts = getOptions(it);
-//         if (help) {
-//             console.log(it)
-//         } else {
+var main = function () {
+    $f.readLocal("docs/usage.md").then(function (it) {
+        var opts;
 
-//             if (!stdin) {
-//                 $fs.readFileAsync(file, 'utf8').then(_.curry(parseFile)(pdf))
-//             } else {
-//                 $r.stdin().then(_.curry(parseFile)(pdf))
-//             }
-//         }
-//     })
-// }
+        var _opts = opts = getOptions(it);
 
-module.exports = parseFile;
+        var help = _opts.help;
+        var file = _opts.file;
+        var pdf = _opts.pdf;
+        var stdin = _opts.stdin;
+
+        if (help) {
+            console.log(it);
+        } else {
+            $r.stdin().then(function (it) {
+                parseFile(file, it);
+            });
+        }
+    });
+};
+
+if (!module.parent) {
+    main();
+} else {
+    module.exports = parseFile;
+}
