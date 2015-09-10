@@ -26,6 +26,7 @@ var getOptions = function (doc) {
     var o = $d(doc);
     var help = $o("-h", "--help", false, o);
     var latex = $o("-t", "--latex", false, o);
+    var ascii = $o("-a", "--ascii", false, o);
     var file = o.FILE;
     var stdout = false;
     if (_.isUndefined(file) || _.isNull(file)) {
@@ -33,7 +34,7 @@ var getOptions = function (doc) {
     }
     var pdf = !latex;
     return {
-        help: help, file: file, pdf: pdf, latex: latex, stdout: stdout
+        help: help, file: file, pdf: pdf, latex: latex, stdout: stdout, ascii: ascii
     };
 };
 
@@ -55,22 +56,20 @@ function getInvisiblePoints(a) {
 }
 
 function getRect(lin, c) {
+
     var lowestRow = lin.length;
-    var lowestCol;
+    var lowestCol = _.max(_.map(lin, function (it) {
+        return it.length;
+    }));
+
     var highestRow = 0;
-    var highestCol;
+    var highestCol = 0;
     _.forEach(lin, function (it, r) {
         if (it.indexOf(c) !== -1) {
-            if (r <= lowestRow) {
-                lowestRow = r;
-                lowestCol = it.indexOf(c);
-            }
-        }
-        if (it.lastIndexOf(c) !== -1) {
-            if (r >= highestRow) {
-                highestRow = r;
-                highestCol = it.lastIndexOf(c);
-            }
+            lowestRow = Math.min(lowestRow, r);
+            lowestCol = Math.min(lowestCol, it.indexOf(c));
+            highestRow = Math.max(highestRow, r);
+            highestCol = Math.max(highestCol, it.lastIndexOf(c));
         }
     });
     return {
@@ -121,7 +120,7 @@ function parseLayout(s) {
     var ip = getInvisiblePoints(a);
     var layoutRectangle = [lin.length, _.max(lin, function (it) {
         return it.length;
-    })];
+    }).length];
     return {
         geometry: layoutRectangle,
         layoutElements: le,
@@ -137,6 +136,43 @@ function parseLayout(s) {
     };
 }
 
+function isInRect(layout, r, c) {
+    return _.any(_.map(layout.rectangles, function (it) {
+        var t = it.rectangle;
+        var r1 = t.ul[0];
+        var c1 = t.ul[1];
+        var r2 = t.lr[0];
+        var c2 = t.lr[1];
+        if (r >= r1 && r <= r2 && c >= c1 && c <= c2) {
+            return true;
+        } else {
+            return false;
+        }
+    }));
+}
+
+function getChar(layout, s, r, c) {
+    var lin = s.split("\n");
+    if (_.isUndefined(lin[r]) || lin[r].length - 1 < c) {
+        if (isInRect(layout, r, c)) {
+            return ".";
+        } else {
+            return " ";
+        }
+        return " ";
+    } else {
+        if (lin[r][c] !== " ") {
+            return lin[r][c];
+        } else {
+            if (isInRect(layout, r, c)) {
+                return ".";
+            } else {
+                return " ";
+            }
+        }
+    }
+}
+
 function firstOf(array, condition) {
     return _.first(_.filter(array, condition));
 }
@@ -145,7 +181,7 @@ function parseFile(opts, it) {
     var file = opts.file;
     var pdf = opts.pdf;
     var stdout = opts.stdout;
-    // console.log(JSON.stringify(file, 0, 4));
+    var fileData = it;
     var tokens = marked.parse(it);
     var codeblock = firstOf(tokens.children, function (it) {
         return it.type === "code";
@@ -163,33 +199,53 @@ function parseFile(opts, it) {
     var data = {
         layout: layout, connections: connections, labels: labels
     };
-    toLatex(data).then(function (it) {
-        var dir = os.tmpdir();
-        var source = "" + dir + "/org2kf.tex";
-        if (pdf) {
-            it.to(source);
-            $s.execAsync("cd " + dir + " && xelatex -interaction=batchmode " + source, {
-                silent: true
-            }).then(function () {
-                if (stdout) {
-                    console.log($s.cat("" + dir + "/org2kf.pdf"));
-                } else {
-                    $s.execAsync("cp -f " + dir + "/org2kf.pdf " + file);
-                }
-            });
-        } else {
-            if (stdout) {
-                console.log(it);
+    if (!opts.ascii) {
+        toLatex(data).then(function (it) {
+            var dir = os.tmpdir();
+            var source = "" + dir + "/org2kf.tex";
+            if (pdf) {
+                it.to(source);
+                $s.execAsync("cd " + dir + " && xelatex -interaction=batchmode " + source, {
+                    silent: true
+                }).then(function () {
+                    if (stdout) {
+                        console.log($s.cat("" + dir + "/org2kf.pdf"));
+                    } else {
+                        $s.execAsync("cp -f " + dir + "/org2kf.pdf " + file);
+                    }
+                });
             } else {
-                console.log("cp " + source + " " + file);
-                $s.execAsync("cp " + source + " " + file);
+                if (stdout) {
+                    console.log(it);
+                } else {
+                    console.log("cp " + source + " " + file);
+                    $s.execAsync("cp " + source + " " + file);
+                }
             }
+        });
+    } else {
+        var y = layout.geometry[0];
+        var x = layout.geometry[1];
+        var r, c;
+        var s = "```\n";
+        for (r = 0; r < y; r++) {
+            for (c = 0; c < x; c++) {
+                s = s + getChar(layout, codeblock.value, r, c);
+            }
+            s = s + "\n";
         }
-    });
+        s = s + "```";
+
+        console.log(s);
+        console.log(fileData.replace(/```[\w\n\.\s]*```/g, ""));
+    }
 }
 
 function parseFileStandard(destination, content) {
-    return parseFile({ pdf: true, file: destination }, content);
+    return parseFile({
+        pdf: true,
+        file: destination
+    }, content);
 }
 
 var main = function () {

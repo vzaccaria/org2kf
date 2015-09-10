@@ -3,11 +3,12 @@
     CCC
 I 2 CCC  O
     CCC 
-  1
-    c
-a b   d
+  1         D
+    c             D
+a b   d     
+               F
 
-x y z
+x y z       F     F
 ```
 
 
@@ -20,6 +21,8 @@ x y z
 | b    |        | rectangle    |
 | c    |        | rectangle    |
 | d    |        | rectangle    |
+| D    |        | rectangle    |
+| F    |        | rectangle    |
 |      |        |              |
 
 
