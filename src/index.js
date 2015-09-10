@@ -1,11 +1,11 @@
 /* eslint quotes: [0], strict: [0] */
 var {
-    $d, $o, $f, $fs, _, $s, $r
+    $d, $o, $f, _, $s, $r
 } = require('zaccaria-cli')
 
 var marked = require('mdast')
-var path = require('path')
-var S = require('string')
+// var path = require('path')
+var $S = require('string')
 var {
     toLatex
 } = require('./lib/latex')
@@ -15,14 +15,15 @@ var getOptions = doc => {
     "use strict"
     var o = $d(doc)
     var help = $o('-h', '--help', false, o)
+    var latex = $o('-t', '--latex', false, o)
     var file = o.FILE
-    var stdin = false
-    if (_.isUndefined(file) || _.isNull(file)) {
-        stdin = true;
-    }
-    var pdf = $o('-p', '--pdf', false, o)
+	var stdout = false
+	if(_.isUndefined(file) || _.isNull(file)) {
+		stdout = true
+	}
+    var pdf = !latex
     return {
-        help, file, pdf, stdin
+        help, file, pdf, latex, stdout
     }
 }
 
@@ -33,13 +34,13 @@ function error(s) {
 
 function getLayoutElements(a) {
     return _.filter(_.keys(a), (k) => {
-        return S(k).isAlpha();
+        return $S(k).isAlpha();
     })
 }
 
 function getInvisiblePoints(a) {
     return _.filter(_.keys(a), (k) => {
-        return S(k).isNumeric();
+        return $S(k).isNumeric();
     })
 }
 
@@ -130,9 +131,12 @@ function firstOf(array, condition) {
     return _.first(_.filter(array, condition))
 }
 
-function parseFile(file, it) {
-    var pdf = true
-    console.log(JSON.stringify(file, 0, 4));
+
+function parseFile(opts, it) {
+	var file = opts.file
+	var pdf = opts.pdf
+	var stdout = opts.stdout
+    // console.log(JSON.stringify(file, 0, 4));
     var tokens = marked.parse(it)
     var codeblock = firstOf(tokens.children, it => {
         return it.type === 'code'
@@ -155,17 +159,17 @@ function parseFile(file, it) {
         var source = `${dir}/org2kf.tex`
         if (pdf) {
             it.to(source)
-            $s.execAsync(`cd ${dir} && xelatex ${source}`, {
+            $s.execAsync(`cd ${dir} && xelatex -interaction=batchmode ${source}`, {
                 silent: true
             }).then(() => {
-                if (_.isUndefined(file)) {
+                if (stdout) {
                     console.log($s.cat(`${dir}/org2kf.pdf`))
                 } else {
                     $s.execAsync(`cp -f ${dir}/org2kf.pdf ${file}`)
                 }
             })
         } else {
-            if (_.isUndefined(file)) {
+            if (stdout) {
                 console.log(it)
             } else {
                 console.log(`cp ${source} ${file}`)
@@ -175,18 +179,23 @@ function parseFile(file, it) {
     })
 }
 
+
+function parseFileStandard(destination, content) {
+    return parseFile({ pdf: true, file: destination }, content)
+}
+
 var main = () => {
     $f.readLocal('docs/usage.md').then(it => {
-        var opts;
+		var opts;
         var {
-            help, file, pdf, stdin
+            help
         } = opts = getOptions(it);
         if (help) {
             console.log(it)
         } else {
-            $r.stdin().then( it => {
-				parseFile(file, it)
-			})
+            $r.stdin().then(it => {
+				parseFile(opts, it)
+            })
         }
     })
 }
@@ -194,5 +203,5 @@ var main = () => {
 if (!module.parent) {
     main()
 } else {
-    module.exports = parseFile
+    module.exports = parseFileStandard
 }

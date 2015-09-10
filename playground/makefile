@@ -5,8 +5,18 @@ all:
 edit:
 	open -a "Skim" tikz.pdf
 	watchman tikz.tex make
-k:
-	make -C .. && ../index.js ../reference/arch.md > ./tikz.tex && make
+
+tex:
+	make -C .. && cat ../reference/arch.md | ../index.js -t
+
+texf:
+	make -C .. && cat ../reference/arch.md | ../index.js -t > tikz.tex
+	xelatex tikz.tex
+
+
+pdf:
+	make -C .. && cat ../reference/arch.md | ../index.js ./tikz.pdf
+
 
 play:
-	watchman ../src/latex.js 'make -C .. && ../index.js ../reference/arch.md > ./tikz.tex && make'
+	watchman '../src/latex.js' 'make tex'

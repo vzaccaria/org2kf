@@ -1,8 +1,11 @@
 var {
-    $f, _, $m, $mDoMaybe, $mMaybe
+    $f, _, $m, $mDoMaybe
 } = require("zaccaria-cli")
+var debug = require("debug")("latex")
 
-var { aliases } = require('./aliases')
+var {
+    aliases
+} = require("./aliases")
 
 function ns(x) {
     "use strict"
@@ -14,14 +17,30 @@ function ns(x) {
 }
 
 function $mns(x) {
-	"use strict"
+    "use strict"
     return $m(ns(x))
 }
 
 function get(x) {
-	"use strict"
-	return $m(aliases[x]).orSome(x)
+    "use strict"
+    return $m(aliases[x]).orSome(x)
 }
+
+function cartesianProductOf() {
+    "use strict"
+    return Array.prototype.reduce.call(arguments, function(a, b) {
+        var ret = [];
+        a.forEach(function(a) {
+            b.forEach(function(b) {
+                ret.push(a.concat([b]));
+            });
+        });
+        return ret;
+    }, [
+        []
+    ]);
+}
+
 
 function toLatex(o) {
     "use strict"
@@ -55,9 +74,9 @@ function toLatex(o) {
                     `minimum width = ${sizex}cm`,
                     type
                 ]
-				if(type !== "") {
-					opts = opts.concat(["draw"])
-				}
+                if (type !== "") {
+                    opts = opts.concat(["draw"])
+                }
                 return opts;
             }
         }
@@ -79,27 +98,92 @@ function toLatex(o) {
         }
 
         function drawLink(l) {
-            return $mDoMaybe(function*() {
+            var ret = $mDoMaybe(function*() {
                 var s = yield $mns(l.src)
                 var d = yield $mns(l.dst)
-                var style = $m(l.style).orSome("")
-                var curve = $mns(l.curve).orSome("to")
-                    /* Ortho shortcut */
-				curve = get(curve)
-				style = get(style)
-                style = style.split(",")
-                var label = $m(l.label).orSome("")
-                var labelStyle = $m(l.labelStyle).orSome("")
-                var lb = `node [ ${labelStyle} ] { ${label} } `
-                return _.map(style, st => {
-                    var link = `\\draw[${st}] (${s}) ${curve} ${lb} (${d})`
-                    return `${link};`
-                }).join("\n")
+                s = s.split(",")
+                d = d.split(",")
+                var pairs = cartesianProductOf(s, d)
+
+                function createPair(src, dst, first, last) {
+                    return {
+                        src, dst, first: first, last: last
+                    }
+                }
+
+                function pairToPairs(it) {
+                    if (!_.isUndefined(l.through) && l.through !== "") {
+                        var t = l.through.split(",")
+                        var rs = []
+                        rs = rs.concat([createPair(it[0], t[0], true, false)])
+                        var i;
+                        for (i = 0; i < (t.length - 1); i++) {
+                            rs = rs.concat([createPair(t[i], t[i + 1], false, false)])
+                        }
+                        rs = rs.concat([createPair(t[i], it[1], false, true)])
+                        return rs
+                    } else {
+                        return [createPair(it[0], it[1], true, true)]
+                    }
+                }
+
+                function drawNodePair(pair) {
+
+                    var style = $m(l.style).orSome("")
+                    var curve = $mns(l.curve).orSome("to")
+                    var label = $m(l.label).orSome("")
+                    var pattern = $m(l.pattern).orSome("")
+                    var labelStyle = $m(l.labelStyle).orSome("")
+
+                    curve = get(curve)
+                    style = get(style)
+                    style = style.split(",")
+                    var lb = `node [ ${labelStyle} ] { ${label} } `
+
+                    if (pattern === "last") {
+                        var nodePath = _.map(pair, it => {
+                            return `(${it.src})`;
+                        }).join(` ${curve} `)
+                        var d = _.last(pair).dst
+
+                        return _.map(style, st => {
+                            var link = `\\draw[${st}] ${nodePath} ${curve} ${lb} (${d})`
+                            return `${link};`
+                        }).join("\n")
+
+                    } else {
+                        var cnodePath = _.map(pair, (it) => {
+                            return _.map(style, (st, stindex) => {
+                                if (it.last && stindex === 0) {
+                                    return `\\draw[${st}] (${it.src}) ${curve} ${lb} (${it.dst});`
+                                } else {
+                                    return `\\draw[${st}] (${it.src}) ${curve} (${it.dst});`
+                                }
+                            }).join("\n")
+                        }).join("\n")
+                        return cnodePath
+                    }
+
+                }
+
+                pairs = _.map(pairs, pairToPairs)
+                return _.map(pairs, drawNodePair).join("\n")
             }())
+
+            if (!_.isString(ret)) {
+                return undefined;
+            } else {
+                return ret;
+            }
         }
         var nodesDrawn = _.map(o.layout.rectangles, drawNode).join("\n")
-        var connections = _.map(o.connections.json, drawLink).join("\n")
-        var data = nodesDrawn.concat(connections)
+        var linksDrawn;
+        if (!_.isUndefined(o.connections)) {
+            linksDrawn = _.filter(_.map(o.connections.json, drawLink)).join("\n")
+        } else {
+            linksDrawn = ""
+        }
+        var data = nodesDrawn.concat(linksDrawn)
         return it.replace("@DISTANCE", "1cm").replace("@CODE", data)
     })
 }

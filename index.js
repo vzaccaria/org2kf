@@ -7,14 +7,13 @@ var _require = require("zaccaria-cli");
 var $d = _require.$d;
 var $o = _require.$o;
 var $f = _require.$f;
-var $fs = _require.$fs;
 var _ = _require._;
 var $s = _require.$s;
 var $r = _require.$r;
 
 var marked = require("mdast");
-var path = require("path");
-var S = require("string");
+// var path = require('path')
+var $S = require("string");
 
 var _require2 = require("./lib/latex");
 
@@ -26,14 +25,15 @@ var getOptions = function (doc) {
     "use strict";
     var o = $d(doc);
     var help = $o("-h", "--help", false, o);
+    var latex = $o("-t", "--latex", false, o);
     var file = o.FILE;
-    var stdin = false;
+    var stdout = false;
     if (_.isUndefined(file) || _.isNull(file)) {
-        stdin = true;
+        stdout = true;
     }
-    var pdf = $o("-p", "--pdf", false, o);
+    var pdf = !latex;
     return {
-        help: help, file: file, pdf: pdf, stdin: stdin
+        help: help, file: file, pdf: pdf, latex: latex, stdout: stdout
     };
 };
 
@@ -44,13 +44,13 @@ function error(s) {
 
 function getLayoutElements(a) {
     return _.filter(_.keys(a), function (k) {
-        return S(k).isAlpha();
+        return $S(k).isAlpha();
     });
 }
 
 function getInvisiblePoints(a) {
     return _.filter(_.keys(a), function (k) {
-        return S(k).isNumeric();
+        return $S(k).isNumeric();
     });
 }
 
@@ -141,9 +141,11 @@ function firstOf(array, condition) {
     return _.first(_.filter(array, condition));
 }
 
-function parseFile(file, it) {
-    var pdf = true;
-    console.log(JSON.stringify(file, 0, 4));
+function parseFile(opts, it) {
+    var file = opts.file;
+    var pdf = opts.pdf;
+    var stdout = opts.stdout;
+    // console.log(JSON.stringify(file, 0, 4));
     var tokens = marked.parse(it);
     var codeblock = firstOf(tokens.children, function (it) {
         return it.type === "code";
@@ -166,17 +168,17 @@ function parseFile(file, it) {
         var source = "" + dir + "/org2kf.tex";
         if (pdf) {
             it.to(source);
-            $s.execAsync("cd " + dir + " && xelatex " + source, {
+            $s.execAsync("cd " + dir + " && xelatex -interaction=batchmode " + source, {
                 silent: true
             }).then(function () {
-                if (_.isUndefined(file)) {
+                if (stdout) {
                     console.log($s.cat("" + dir + "/org2kf.pdf"));
                 } else {
                     $s.execAsync("cp -f " + dir + "/org2kf.pdf " + file);
                 }
             });
         } else {
-            if (_.isUndefined(file)) {
+            if (stdout) {
                 console.log(it);
             } else {
                 console.log("cp " + source + " " + file);
@@ -186,6 +188,10 @@ function parseFile(file, it) {
     });
 }
 
+function parseFileStandard(destination, content) {
+    return parseFile({ pdf: true, file: destination }, content);
+}
+
 var main = function () {
     $f.readLocal("docs/usage.md").then(function (it) {
         var opts;
@@ -193,15 +199,12 @@ var main = function () {
         var _opts = opts = getOptions(it);
 
         var help = _opts.help;
-        var file = _opts.file;
-        var pdf = _opts.pdf;
-        var stdin = _opts.stdin;
 
         if (help) {
             console.log(it);
         } else {
             $r.stdin().then(function (it) {
-                parseFile(file, it);
+                parseFile(opts, it);
             });
         }
     });
@@ -210,5 +213,5 @@ var main = function () {
 if (!module.parent) {
     main();
 } else {
-    module.exports = parseFile;
+    module.exports = parseFileStandard;
 }
