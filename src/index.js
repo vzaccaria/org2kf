@@ -149,7 +149,7 @@ function getChar(layout, s, r, c) {
         }
         return " "
     } else {
-        if (lin[r][c] !== " ") {
+        if (lin[r][c] !== " " && lin[r][c] !== ".") {
             return lin[r][c]
         } else {
             if ((isInRect(layout, r, c))) {

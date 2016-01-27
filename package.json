@@ -1,7 +1,7 @@
 {
   "name": "org2kf",
   "version": "0.0.1",
-  "description": "No name given yet",
+  "description": "Generate tikz diagrams from ascii",
   "main": "index.js",
   "bin": {
     "org2kf": "./index.js"

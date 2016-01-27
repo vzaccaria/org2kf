@@ -92,9 +92,9 @@ function toLatex(o) {
                 ox, oy
             } = getSize(n)
             var opts = getOpts(n).join(", ")
-            return `%${JSON.stringify(n.rectangle)} - ${n.id}
-\\node at (${ox}cm,${oy}cm) [ ${opts} ] (${n.id}) { ${getLabel(n)} };
-`
+                return `%${JSON.stringify(n.rectangle)} - ${n.id}
+                \\node at (${ox}cm,${oy}cm) [ ${opts} ] (${n.id}) { ${getLabel(n)} };
+                `
         }
 
         function drawLink(l) {
